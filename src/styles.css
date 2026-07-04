@@ -109,6 +109,7 @@ body {
   padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;
 }
 .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+.file-input { display: none; }
 
 .nav-toggle { display: none; }
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { courses, labelOf } from './content.js';
 import { Md, QuestionCard, stemText } from './components.jsx';
-import { useWrongSet, removeEntry, clearCourse } from './store.js';
+import { useWrongSet, removeEntry, clearCourse, mergeEntries } from './store.js';
 
 // 为一道题构造稳定 id 与错题集条目（含题目快照，便于训练页直接渲染、且部署后自包含）。
 function makeEntry(course, doc, sec, q, i) {
@@ -285,6 +285,7 @@ function TrainView({ wrongSet, course, trainSeed, revealAll, setRevealAll, reset
 }
 
 function ManageView({ wrongSet, course, onTrain }) {
+  const importRef = useRef(null);
   // 错题集按课程隔离，这里只展示当前课程的错题，按所属文档分组。
   const groups = useMemo(() => {
     const m = new Map();
@@ -295,12 +296,49 @@ function ManageView({ wrongSet, course, onTrain }) {
     return [...m.entries()];
   }, [wrongSet]);
 
+  function exportWrongSet() {
+    const json = JSON.stringify(wrongSet, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wrongset-${course.label}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importWrongSet(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || '[]'));
+        const result = mergeEntries(parsed);
+        alert(`导入完成：读取 ${result.imported} 条错题，新增或更新 ${result.changed} 条。`);
+      } catch {
+        alert('导入失败：请选择从本网站导出的错题集 JSON 文件。');
+      } finally {
+        if (importRef.current) importRef.current.value = '';
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
   return (
     <div className="doc-main">
       <header className="doc-header">
         <h1>错题管理 <span className="count">{course.label} · {wrongSet.length} 题</span></h1>
         <div className="toolbar">
           <button onClick={onTrain} disabled={wrongSet.length === 0}>开始训练</button>
+          <button onClick={exportWrongSet} disabled={wrongSet.length === 0}>导出本课程错题</button>
+          <button onClick={() => importRef.current?.click()}>导入错题集</button>
+          <input
+            ref={importRef}
+            className="file-input"
+            type="file"
+            accept="application/json,.json"
+            onChange={(e) => importWrongSet(e.target.files?.[0])}
+          />
           <button
             className="danger"
             disabled={wrongSet.length === 0}

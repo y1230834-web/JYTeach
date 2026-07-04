@@ -56,6 +56,21 @@ export function clearCourse(courseDir) {
   write(cache.filter((e) => e.courseDir !== courseDir));
 }
 
+export function mergeEntries(entries) {
+  const incoming = Array.isArray(entries)
+    ? entries.filter((e) => e && typeof e.id === 'string' && typeof e.type === 'string' && e.q)
+    : [];
+  const byId = new Map(cache.map((e) => [e.id, e]));
+  let changed = 0;
+  for (const entry of incoming) {
+    const prev = byId.get(entry.id);
+    if (!prev || JSON.stringify(prev) !== JSON.stringify(entry)) changed++;
+    byId.set(entry.id, entry);
+  }
+  if (incoming.length) write([...byId.values()]);
+  return { imported: incoming.length, changed };
+}
+
 // ---- React 绑定 ----
 function subscribe(l) {
   listeners.add(l);
