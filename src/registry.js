@@ -28,6 +28,14 @@ function matchExplain(line) {
   return m ? m[1].trim() : null;
 }
 
+const IMPORTANT_RE = /(?:【重点】|\[重点\]|重点题)/;
+
+function pullImportant(text) {
+  const important = IMPORTANT_RE.test(text);
+  const clean = text.replace(IMPORTANT_RE, '').replace(/\s{2,}/g, ' ').trim();
+  return { text: clean, important };
+}
+
 // ---------------------------------------------------------------------------
 // 判断题： `1. 题干（**√**）`，下一行可选 `- 解析：……`
 // ---------------------------------------------------------------------------
@@ -39,8 +47,9 @@ function parseJudgment(lines) {
     if (head && ans) {
       const raw = ans[1];
       const answer = /[√对T t正]/i.test(raw) ? '√' : '×';
-      const stem = head[2].replace(/[（(]\s*\*\*\s*[√×对错TFtf正误]\s*\*\*\s*[)）]\s*$/, '').trim();
-      items.push({ num: head[1], stem, answer, explain: '' });
+      const rawStem = head[2].replace(/[（(]\s*\*\*\s*[√×对错TFtf正误]\s*\*\*\s*[)）]\s*$/, '').trim();
+      const { text: stem, important } = pullImportant(rawStem);
+      items.push({ num: head[1], stem, answer, explain: '', important });
       continue;
     }
     const ex = matchExplain(line);
@@ -69,7 +78,8 @@ function parseChoice(lines) {
     if (!head || !ans) continue;
 
     const answer = ans[1].toUpperCase().split('').sort().join('');
-    const stem = head[2].replace(/[（(]\s*\*\*[A-Za-z]+\*\*\s*[)）]/, '（____）').trim();
+    const rawStem = head[2].replace(/[（(]\s*\*\*[A-Za-z]+\*\*\s*[)）]/, '（____）').trim();
+    const { text: stem, important } = pullImportant(rawStem);
 
     // 收集选项：从下一非空行起，连续的「以选项字母开头」的行
     const options = [];
@@ -96,7 +106,7 @@ function parseChoice(lines) {
     if (ex) explain = ex;
 
     const multi = answer.length > 1;
-    items.push({ num: head[1], stem, answer, options, explain, multi });
+    items.push({ num: head[1], stem, answer, options, explain, multi, important });
     i = j - 1;
   }
   return items;
@@ -136,7 +146,8 @@ function parseFill(lines) {
     if (!/_{2,}/.test(head[2])) continue; // 没有空位不算填空题
 
     const answers = ans[1].split(/[｜|；;]/).map((s) => s.trim()).filter(Boolean);
-    const stem = head[2].replace(ANSWER_PAREN, '').trim();
+    const rawStem = head[2].replace(ANSWER_PAREN, '').trim();
+    const { text: stem, important } = pullImportant(rawStem);
     const blanks = (stem.match(/_{2,}/g) || []).length || answers.length;
 
     let explain = '';
@@ -145,7 +156,7 @@ function parseFill(lines) {
     const ex = j < lines.length ? matchExplain(lines[j]) : null;
     if (ex) { explain = ex; i = j; }
 
-    items.push({ num: head[1], stem, answers, blanks, explain });
+    items.push({ num: head[1], stem, answers, blanks, explain, important });
   }
   return items;
 }
@@ -175,7 +186,8 @@ function parseSubjective(lines) {
   return items.map((it) => {
     // 正文遇到独立水平分割线即截断（小节分隔 / 页脚）
     const body = it.bodyLines.join('\n').split(/\n[ \t]*-{3,}[ \t]*(?:\n|$)/)[0];
-    return { title: it.title, answerMd: body.trim().replace(/^[:：]\s*/, '') };
+    const { text: title, important } = pullImportant(it.title);
+    return { title, answerMd: body.trim().replace(/^[:：]\s*/, ''), important };
   });
 }
 

@@ -227,9 +227,17 @@ export function WrongToggle({ entry }) {
 export function QuestionCard({ entry, reveal }) {
   const Comp = RENDERERS[entry.type];
   if (!Comp) return null;
+  const important = Boolean(entry.q?.important);
   return (
-    <div className="q-shell">
-      <WrongToggle entry={entry} />
+    <div className={'q-shell' + (important ? ' is-important' : '')}>
+      <div className="q-tools">
+        {important && (
+          <span className="important-badge" title="理论重点题">
+            理论重点
+          </span>
+        )}
+        <WrongToggle entry={entry} />
+      </div>
       <Comp q={entry.q} reveal={reveal} />
     </div>
   );

@@ -10,6 +10,9 @@
   --right-soft: #e7f6ec;
   --wrong: #dc2626;
   --wrong-soft: #fdeaea;
+  --important: #b45309;
+  --important-soft: #fff7ed;
+  --important-line: #fdba74;
   --sidebar-w: 270px;
 }
 
@@ -136,16 +139,42 @@ body {
 .q-list { display: flex; flex-direction: column; gap: 14px; }
 .q-shell { position: relative; }
 .q { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.q-shell.is-important .q {
+  border-color: var(--important-line);
+  background: linear-gradient(180deg, var(--important-soft) 0%, var(--panel) 72%);
+  box-shadow: 0 0 0 1px rgba(180, 83, 9, 0.08);
+}
+.q-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin: 0 2px 6px;
+}
+.q-shell.is-important .q-tools { justify-content: space-between; }
+.important-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border: 1px solid var(--important-line);
+  background: var(--important-soft);
+  color: var(--important);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
 
 /* 错题集开关（题卡右上角） */
 .wrong-toggle {
-  position: absolute; top: 10px; right: 12px; z-index: 2;
   border: 1px solid var(--line); background: #fff; color: var(--muted);
   font-size: 12px; padding: 3px 10px; border-radius: 999px; cursor: pointer; line-height: 1.6;
 }
 .wrong-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .wrong-toggle.on { border-color: #f59e0b; background: #fff7ed; color: #b45309; font-weight: 600; }
-.q-shell .q-stem { padding-right: 96px; } /* 给右上角开关留位置 */
+.q-shell .q-stem { padding-right: 0; }
 
 /* ---------- 错题训练 ---------- */
 .train-item { display: flex; flex-direction: column; gap: 4px; }
